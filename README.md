@@ -1,5 +1,5 @@
 # PDF_Equation
-Code examples supporting the paper **Density, mixing and energetics through the lens of probability**, Craske J. et al. 2024
+Code examples
 
 Example (1) ABC flow advection diffusion equation 
 
