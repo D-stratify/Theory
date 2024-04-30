@@ -134,9 +134,9 @@ def Data(N_bins=256):
 def Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time):
 
     # Commented out IPython magic to ensure Python compatibility.
-    import matplotlib as mpl
-    mpl.rcParams['xtick.major.size'] = 16
-    mpl.rcParams['ytick.major.size'] = 16
+    #import matplotlib as mpl
+    #mpl.rcParams['xtick.major.size'] = 16
+    #mpl.rcParams['ytick.major.size'] = 16
 
     import matplotlib.pyplot as plt
     plt.rcParams.update({
@@ -146,27 +146,29 @@ def Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time):
         'text.latex.preamble': r'\usepackage{amsfonts}'
     })
 
-    fig, axs = plt.subplots(1,2,figsize=(8,4))
+    fig, axs = plt.subplots(2,1,figsize=(4,8))
 
     axs[0].pcolormesh(x_data,y_data,Y_data[-1,:,:,0],cmap='RdBu',norm='linear')
-    axs[0].annotate(r'$t=%2.2f$'%stop_sim_time, xy=(-0.3,-0.3), xycoords='axes fraction',fontsize=24)
+    #axs[0].annotate(r'$t=%2.2f$'%stop_sim_time, xy=(-0.3,-0.3), xycoords='axes fraction',fontsize=24)
 
     axs[1].plot(y,f,'r', linewidth=2)
     axs[1].fill_between(x=y,y1=f,color= "r",alpha= 0.2)
     axs[1].plot(y,E,'b', linewidth=2)
     
-    axs[1].set_xlim([-1,1])
+    axs[1].set_xlim([-1.05,1.05])
     lims = [np.max(E),np.max(f)]
     axs[1].set_ylim([0.,1.1*np.max(lims)])
 
     #if stop_sim_time >= 2.0:
-    axs[0].set_ylabel(r'$x_2$',fontsize=24)
-    axs[0].set_xlabel(r'$x_1$',fontsize=24)
-    axs[1].set_xlabel(r'$y$'  ,fontsize=24)
+    # axs[0].set_ylabel(r'$x_2$',fontsize=24)
+    # axs[0].set_xlabel(r'$x_1$',fontsize=24)
+    # axs[1].set_xlabel(r'$y$'  ,fontsize=24)
         
     for n,ax in enumerate(fig.axes):
-        ax.tick_params(axis='x', labelsize=20)
-        ax.tick_params(axis='y', labelsize=20)
+        #ax.tick_params(axis='x', labelsize=20)
+        #ax.tick_params(axis='y', labelsize=20)
+        ax.set_xticks([])
+        ax.set_yticks([])
         ax.set_box_aspect(aspect=1)
 
     plt.tight_layout()
@@ -176,7 +178,7 @@ def Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time):
 
 if __name__ == "__main__":
     
-    for t in [0.05,0.5,1.0,2.0]:
-        solve(stop_sim_time=t,Nx=48)
+    for t in [0.5,1.0,2.0,4.0]:
+        solve(stop_sim_time=t,Nx=24)
         x_data,y_data,Y_data,y,f,E = Data(N_bins=128)
         Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time=t)
