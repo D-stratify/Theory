@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "John" 
+  given-names: "Crakse"
+  orcid: "https://orcid.org/0000-0002-8888-3180"
+- family-names: "Paul"
+  given-names: "Mannix"
+  orcid: "https://orcid.org/0000-0003-3042-857X"
+title: "Supporting Examples to the paper: Transport and mixing in control volumes1
+through the lens of probability"
+version: 2.0.4
+doi: 
+date-released: 2024-05-? 
+url: "https://github.com/mannixp/PDF_Equation.git"
