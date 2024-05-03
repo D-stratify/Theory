@@ -25,12 +25,12 @@ for h in root.handlers:
     h.setLevel("WARNING");
 
 import matplotlib.pyplot as plt
-# plt.rcParams.update({
-#     "text.usetex": True,
-#     "font.family": "sans-serif",
-#     "font.sans-serif": "Helvetica",
-#     'text.latex.preamble': r'\usepackage{amsfonts}'
-# })
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "sans-serif",
+    "font.sans-serif": "Helvetica",
+    'text.latex.preamble': r'\usepackage{amsfonts}'
+})
 
 # Solvers
 def OU(Y_t,W_t,dt, μ_z,a,σ):
@@ -222,7 +222,7 @@ def Plot_space_time():
   t_vec  = file['tasks/Y'].dims[0][0][:]
 
   from matplotlib import ticker
-  fig = plt.figure(figsize=(12,4))
+  fig = plt.figure(figsize=(12,5))
   plt.contourf(t_vec,z_vec,Y_vec.T,levels=50,cmap='RdBu')
   plt.contourf(t_vec,z_vec,Y_vec.T,levels=50,cmap='RdBu')
   cbar = plt.colorbar()
@@ -249,14 +249,14 @@ def Plot_joint_density(Y0_Data,Y1_Data,Y0zData,Y1zData):
   Y_DATA = np.concatenate((Y0_Data[...].flatten(),Y1_Data[...].flatten()))
   dY_DATA= np.concatenate((nz_minus*Y0zData[...].flatten(),nz_plus*Y1zData[...].flatten()))
 
-  fig = plt.figure()
+  fig = plt.figure(figsize=(4,5))
 
-  plt.hist2d(x=Y0_Data[...].flatten(), y=nz_minus*Y0zData[...].flatten(),bins = 20)
+  plt.hist2d(x=Y0_Data[...].flatten(), y=nz_minus*Y0zData[...].flatten(),range = ((-1.25,1.25),(-10,10)),bins = 20)
   plt.xlabel(r'$y$',fontsize=24)
   plt.ylabel(r'$n \cdot \nabla y$',fontsize=24)
-
   plt.tick_params(axis='both', labelsize=20)
   plt.tight_layout()
+  plt.savefig('Diffusion_1D_Joint_Density.png',dpi=200)
   plt.show()
 
   return None;
@@ -300,6 +300,11 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=512):
   axs[1,1].set_ylim([0,1.1*max(f)])
   axs[1,1].set_xlabel(r'$y$',fontsize=24)
 
+
+  axs[0,0].annotate(r'(a)', xy=(0.05,0.85), xycoords='axes fraction',fontsize=24)
+  axs[0,1].annotate(r'(b)', xy=(0.05,0.85), xycoords='axes fraction',fontsize=24)
+  axs[1,0].annotate(r'(c)', xy=(0.05,0.85), xycoords='axes fraction',fontsize=24)
+  axs[1,1].annotate(r'(d)', xy=(0.05,0.85), xycoords='axes fraction',fontsize=24)
 
   for ax in [axs[0,0],axs[1,0],axs[0,1],axs[1,1]]:
     ax.set_xlim([min(y),max(y)])
