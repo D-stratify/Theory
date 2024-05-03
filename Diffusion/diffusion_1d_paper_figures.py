@@ -25,95 +25,89 @@ for h in root.handlers:
     h.setLevel("WARNING");
 
 import matplotlib.pyplot as plt
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "sans-serif",
-    "font.sans-serif": "Helvetica",
-    'text.latex.preamble': r'\usepackage{amsfonts}'
-})
+# plt.rcParams.update({
+#     "text.usetex": True,
+#     "font.family": "sans-serif",
+#     "font.sans-serif": "Helvetica",
+#     'text.latex.preamble': r'\usepackage{amsfonts}'
+# })
 
-
+# Solvers
 def OU(Y_t,W_t,dt, μ_z,a,σ):
-    """
-    Ornstein-Ulhenbeck process
-    """
+  
+  """
+  Ornstein-Ulhenbeck process
+  """
 
-    dW_t = np.sqrt(dt) * W_t
+  dW_t = np.sqrt(dt) * W_t
 
-    # Euler Maruyama
-    return  Y_t + a*(μ_z - Y_t)*dt + σ * dW_t
+  # Euler Maruyama
+  return  Y_t + a*(μ_z - Y_t)*dt + σ * dW_t
 
-def Solve(N=1000,T=10,Nz=24,a=10,σ=.25,W=None):
+def Solve(N=2000,T=10,Nz=24,a=5,σ=1,W=None):
 
-    zcoord = d3.Coordinate('z')
-    dist   = d3.Distributor(zcoord, dtype=np.float64)
-    zbasis = d3.ChebyshevT(zcoord, size=Nz, bounds=(0,1),dealias=3/2)
+  zcoord = d3.Coordinate('z')
+  dist   = d3.Distributor(zcoord, dtype=np.float64)
+  zbasis = d3.ChebyshevT(zcoord, size=Nz, bounds=(0,1),dealias=1)
 
-    # Fields
-    Y      = dist.Field(name='Y', bases=zbasis)
-    tau_Y1 = dist.Field(name='tau_Y1')
-    tau_Y2 = dist.Field(name='tau_Y2')
-    g0     = dist.Field(name='g0')
-    g1     = dist.Field(name='g1')
+  # Fields
+  Y      = dist.Field(name='Y', bases=zbasis)
+  tau_Y1 = dist.Field(name='tau_Y1')
+  tau_Y2 = dist.Field(name='tau_Y2')
+  g0     = dist.Field(name='g0')
+  g1     = dist.Field(name='g1')
 
-    # Substitutions
-    dz = lambda A: d3.Differentiate(A, zcoord)
-    lift_basis = zbasis.derivative_basis(1)
-    lift = lambda A: d3.Lift(A, lift_basis, -1)
-    Yz = dz(Y)  + lift(tau_Y1)
-    Yzz= dz(Yz) + lift(tau_Y2)
+  # Substitutions
+  dz = lambda A: d3.Differentiate(A, zcoord)
+  lift_basis = zbasis.derivative_basis(1)
+  lift = lambda A: d3.Lift(A, lift_basis, -1)
+  Yz = dz(Y)  + lift(tau_Y1)
+  Yzz= dz(Yz) + lift(tau_Y2)
 
-    # Problem
-    problem = d3.IVP([Y, tau_Y1, tau_Y2], namespace=locals())
-    problem.add_equation("dt(Y) - Yzz = 0")
-    problem.add_equation("Y(z=0) = g0")
-    problem.add_equation("Y(z=1) = g1")
+  # Problem
+  problem = d3.IVP([Y, tau_Y1, tau_Y2], namespace=locals())
+  problem.add_equation("dt(Y) - Yzz = 0")
+  problem.add_equation("Y(z=0) = g0")
+  problem.add_equation("Y(z=1) = g1")
 
-    # Solver
-    solver = problem.build_solver(d3.CNAB1)
-    solver.stop_sim_time = T
+  # Solver
+  solver = problem.build_solver(d3.CNAB1)
+  solver.stop_sim_time = T
 
-    # Initial condition
-    z      = dist.local_grid(zbasis)
-    Y['g'] = z;
+  # Initial condition
+  # z      = dist.local_grid(zbasis)
+  # Y['g'] = z;
 
-    np.random.seed(42)
-    T_vec,dt = np.linspace(0,T,N,retstep=True)
-    if W is None:
-        W = ss.norm.rvs(loc=0, scale=1, size=(N,2))
+  np.random.seed(42)
+  T_vec,dt = np.linspace(0,T,N,retstep=True)
+  if W is None:
+    W = ss.norm.rvs(loc=0, scale=1, size=(N,2))
 
-    Y_snapshots = solver.evaluator.add_file_handler('Y_snapshots', iter=1)
-    Y_snapshots.add_task(Y , layout='g',name='Y' ,scales=3/2)
+  snapshots = solver.evaluator.add_file_handler('snapshots',iter=1)
+  snapshots.add_task(Y , layout='g',name='Y'  ,scales=2)
+  snapshots.add_task(Yz, layout='g',name='Yz' ,scales=2)
 
-    # Main loop
-    logger.info('Starting main loop')
-    while solver.proceed:
+  # Main loop
+  logger.info('Starting main loop')
+  while solver.proceed:
 
-        n    = solver.iteration
+    n    = solver.iteration
 
-        # Specify the bcs according to OU process
-        Yt_z0    = Y(z=0).evaluate()['g'][0];
-        g0['g'] = OU(Y_t = Yt_z0, W_t=W[n,0],dt=dt,μ_z=0,a=a,σ=σ)
+    # Specify the bcs according to OU process
+    Yt_z0    = Y(z=0).evaluate()['g'][0];
+    g0['g'] = OU(Y_t = Yt_z0, W_t=W[n,0],dt=dt,μ_z=0,a=a,σ=σ)
 
-        Yt_z1    = Y(z=1).evaluate()['g'][0]
-        g1['g'] = OU(Y_t = Yt_z1, W_t=W[n,1],dt=dt,μ_z=1,a=a,σ=σ)
+    Yt_z1    = Y(z=1).evaluate()['g'][0]
+    g1['g'] = OU(Y_t = Yt_z1, W_t=W[n,1],dt=dt,μ_z=0,a=a,σ=σ)
 
-        solver.step(dt)
+    solver.step(dt)
 
-        # Capture the last 5 snapshots
-        if  n == int(T/dt) - 5:
-            snapshots = solver.evaluator.add_file_handler('snapshots', iter=1)
-            snapshots.add_task(Y , layout='g',name='Y' ,scales=3/2)
-            snapshots.add_task(Yz, layout='g',name='Yz',scales=3/2)
-
-    return None
-
+  return None
 
 
 def density(Y_data,Range,N_bins):
 
-  # PDF f_C
-  f,y = np.histogram(Y_data[...].flatten(),range=Range,bins=N_bins,density=True); # n + 1 (-2)
+  f,y = np.histogram(Y_data[...].flatten(),range=Range,bins=N_bins,density=True); 
   y   = 0.5*(y[1:] + y[:-1]);
 
   return f,y
@@ -128,7 +122,7 @@ def diffusion(dY2_data,Y_data,Range,N_bins):
 
   f_YΦ,y,φ = np.histogram2d(Y,dY2,range = (Range,(min(dY2),max(dY2))),bins=N_bins,density=True)
   φ = .5*(φ[1:]+φ[:-1]); dφ = φ[1] - φ[0];
-  y = .5*(y[1:]+y[:-1]); dy = y[1] - y[0];
+  #y = .5*(y[1:]+y[:-1]); dy = y[1] - y[0];
   f_Y =  np.sum(  f_YΦ,axis=1)*dφ;      # f_Y(y)
   E   = (np.sum(φ*f_YΦ,axis=1)*dφ)/f_Y; # E{Φ|Y} = int_φ f_Φ|Y(φ|y)*φ dφ
 
@@ -169,24 +163,24 @@ def Data():
   for i,t in enumerate(times):
     Y_data[i,:] = np.interp(z_data, z_cheb, Y_cheb[i,:] )
     Yz_data[i,:]= np.interp(z_data, z_cheb, Yz_cheb[i,:])
-  dY2_data = Yz_data**2;
 
-  return times, z_data,Y_data,Yz_data,dY2_data;
+  return times, z_data,Y_data,Yz_data;
 
-def Generate_Ensemble(N=100,T=1,Paths=500):
+
+def Generate_Ensemble(N=1000,T=5,Paths=250):
    
   Solve(N,T)
-  times, z_data,Y_data,Yz_data,dY2_data = Data()
+  times, z_data,_,_ = Data()
 
-  stp = (len(times),Paths)
+  pad = 20
+  stp = (len(times)-pad,Paths)
   Y0_Data = np.zeros(stp)
   Y1_Data = np.zeros(stp)
   Y0zData = np.zeros(stp)
   Y1zData = np.zeros(stp)
 
-  stzp = (len(times),len(z_data),Paths)
+  stzp = (len(times)-pad,len(z_data),Paths)
   Y_data   = np.zeros(stzp)
-  #Yz_data  = np.zeros(stzp)
   dY2_data = np.zeros(stzp)
 
   W  = ss.norm.rvs(loc=0, scale=1, size=(N,2,Paths))
@@ -195,24 +189,24 @@ def Generate_Ensemble(N=100,T=1,Paths=500):
 
     Solve(N,T,W=W[:,:,n])
 
-    _,_,Y_n,Yz_n,dY2_n = Data()
+    _,_,Y_n,Yz_n  = Data()
 
     # z-integrated
-    Y_data[:,:,n]  =   Y_n[:,:] # time,z_data
-    #Yz_data[:,:,n] =  Yz_n[:,:]
-    dY2_data[:,:,n]= dY2_n[:,:]
+    Y_data[:,:,n]  =   Y_n[pad:,:] # time,z_data
+    dY2_data[:,:,n]=  Yz_n[pad:,:]**2
 
     # Boundaries
-    Y0_Data[:,n] = Y_n[:, 0] # time,z=0
-    Y1_Data[:,n] = Y_n[:,-1]
-    Y0zData[:,n] = Yz_n[:, 0]
-    Y1zData[:,n] = Yz_n[:,-1]
+    Y0_Data[:,n] = Y_n[pad:, 0] # time,z=0
+    Y1_Data[:,n] = Y_n[pad:,-1]
+    Y0zData[:,n] = Yz_n[pad:, 0]
+    Y1zData[:,n] = Yz_n[pad:,-1]
 
     if n%(Paths//5) == 0:
-        print('Path = %d'%n,'\n')
-  
-  return Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData
+      print('Path = %d'%n,'\n')
 
+  return {'Y_data':Y_data,'dY2_data':dY2_data, 
+          'Y0_Data':Y0_Data,'Y1_Data':Y1_Data,
+          'Y0zData':Y0zData,'Y1zData':Y1zData}
 
 
 def Plot_space_time():
@@ -220,23 +214,26 @@ def Plot_space_time():
   Solve()
 
   # Data loading
-  file  = h5py.File('Y_snapshots/Y_snapshots_s1.h5', mode='r')
+  file  = h5py.File('snapshots/snapshots_s1.h5', mode='r')
 
   # Data (t,z)
   Y_vec  = file['tasks/Y' ][:,:]
   z_vec  = file['tasks/Y'].dims[1][0][:]
   t_vec  = file['tasks/Y'].dims[0][0][:]
 
+  from matplotlib import ticker
   fig = plt.figure(figsize=(12,4))
   plt.contourf(t_vec,z_vec,Y_vec.T,levels=50,cmap='RdBu')
-  plt.colorbar()
+  plt.contourf(t_vec,z_vec,Y_vec.T,levels=50,cmap='RdBu')
+  cbar = plt.colorbar()
+  cbar.ax.tick_params(labelsize=20) 
+  tick_locator = ticker.MaxNLocator(nbins=3)
+  cbar.locator = tick_locator
+  cbar.update_ticks()
+
   plt.xlabel(r'$t$',fontsize=24)
   plt.ylabel(r'$z$',fontsize=24)
-  
-  
-  plt.tick_params(axis='x', labelsize=20)
-  plt.tick_params(axis='y', labelsize=20)
-
+  plt.tick_params(axis='both', labelsize=20)
   plt.tight_layout()
   plt.savefig('Diffusion_1D_Space_Time.png',dpi=200)
   plt.show()
@@ -245,34 +242,35 @@ def Plot_space_time():
 
 def Plot_joint_density(Y0_Data,Y1_Data,Y0zData,Y1zData):
 
-  fig, (ax1, ax2) = plt.subplots(ncols=2,sharey=True)
+  nz_minus = -1 # at z=0
+  nz_plus  =  1 # at z=1
 
-  ax1.hist2d(x=Y0_Data[...].flatten(), y=Y0zData[...].flatten(),bins = 20)
-  ax1.set_title(r'$z=0$',fontsize=24)
-  ax1.set_xlabel(r'$y$',fontsize=24)
-  ax1.set_ylabel(r'$\nabla y$',fontsize=24)
 
-  ax2.hist2d(x=Y1_Data[...].flatten(), y=Y1zData[...].flatten(),bins = 20)
-  ax2.set_title(r'$z=1$',fontsize=24)
-  ax2.set_xlabel(r'$y$',fontsize=24)
+  Y_DATA = np.concatenate((Y0_Data[...].flatten(),Y1_Data[...].flatten()))
+  dY_DATA= np.concatenate((nz_minus*Y0zData[...].flatten(),nz_plus*Y1zData[...].flatten()))
 
-  for ax in [ax1,ax2]:
-      ax.tick_params(axis='x', labelsize=20)
-      ax.tick_params(axis='y', labelsize=20)
+  fig = plt.figure()
 
+  plt.hist2d(x=Y0_Data[...].flatten(), y=nz_minus*Y0zData[...].flatten(),bins = 20)
+  plt.xlabel(r'$y$',fontsize=24)
+  plt.ylabel(r'$n \cdot \nabla y$',fontsize=24)
+
+  plt.tick_params(axis='both', labelsize=20)
   plt.tight_layout()
-  plt.savefig('Diffusion_1D_Joint_Density.png',dpi=200)
   plt.show()
 
-def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=64):
+  return None;
+
+def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=512):
   
 
-  Range = (   min(Y_data[...].flatten()),max(Y_data[...].flatten())  );
-  
+  #Range = (   min(Y_data[...].flatten()),max(Y_data[...].flatten())  );
+  Range = (-1.25,1.25)
   # Estimate the terms
   f,y = density(Y_data,Range,N_bins)
-  D2  = diffusion(dY2_data,Y_data,Range,N_bins)
   D1  = drift(f,y, Y0_Data,Y1_Data,Y0zData,Y1zData, N_bins)
+  D2  = diffusion(dY2_data,Y_data,Range,N_bins)
+
 
   # Derivative
   N = len(y)
@@ -289,8 +287,12 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=64):
   axs[0,0].plot(y,D1,'k', linewidth=2,label=r'$\mathbb{D}^{(1)}(y)$')
   axs[0,1].plot(y,D2,'k', linewidth=2,label=r'$\mathbb{D}^{(2)}(y)$')
 
-  axs[1,0].plot(y,D1*f,'k:', linewidth=2,label=r'$\mathbb{D}^{(1)} f$')
-  axs[1,0].plot(y,D@(D2*f),'k--', linewidth=2,label=r'$d/dy \left( \mathbb{D}^{(2)} f \right)$')
+  from scipy.ndimage import gaussian_filter1d
+  LHS = gaussian_filter1d(D1*f,sigma=2)
+  RHS = D@(gaussian_filter1d(D2*f,sigma=2))
+  
+  axs[1,0].plot(y[1:-1],LHS[1:-1],'k:', linewidth=2,label=r'$\mathbb{D}^{(1)} f$')
+  axs[1,0].plot(y[1:-1],RHS[1:-1],'k--', linewidth=2,label=r'$\partial_y \left( \mathbb{D}^{(2)} f \right)$')
   axs[1,0].set_xlabel(r'$y$',fontsize=24)
 
   axs[1,1].plot(y,f,'r', linewidth=2,label=r'$f(y)$')
@@ -302,8 +304,7 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=64):
   for ax in [axs[0,0],axs[1,0],axs[0,1],axs[1,1]]:
     ax.set_xlim([min(y),max(y)])
     ax.legend(loc=8,fontsize=20)
-    ax.tick_params(axis='x', labelsize=20)
-    ax.tick_params(axis='y', labelsize=20)
+    ax.tick_params(axis='both', labelsize=20)
 
   plt.savefig('Diffusion_1D_Coefficients.png',dpi=200)
   plt.show()
@@ -314,21 +315,29 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=64):
 if __name__ == "__main__":
 
   # %%
-  # %matplotlib inline
+  %matplotlib inline
 
   # %%
   # plot the space time diffusion process
   Plot_space_time()
 
   # %%
-  # # Generate Ensemble of data
-  Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData = Generate_Ensemble()
+  # Generate Ensemble of data
+  try:
+    DAT = np.load('DATA.npy',allow_pickle='TRUE').item()
+    print('Loading data ... \n')
+  except:    
+    print('Generating data ... \n')
+    DAT = Generate_Ensemble()
+    np.save('DATA.npy',DAT) 
+    
+  # %%
+  # plot the joint densities
+  Plot_joint_density(DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'])
 
   # %%
-  # # plot the joint densities
-  Plot_joint_density(Y0_Data,Y1_Data,Y0zData,Y1zData)
-
-  # # plot the terms and coefficients
-  Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData)
+  # plot the terms and coefficients
+  Plot_Terms(DAT['Y_data'],DAT['dY2_data'], 
+             DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'],N_bins=1024)
 
 # %%
