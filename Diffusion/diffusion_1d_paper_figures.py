@@ -267,7 +267,6 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=512):
   D1  = drift(f,y, Y0_Data,Y1_Data,Y0zData,Y1zData, N_bins)
   D2  = diffusion(dY2_data,Y_data,Range,N_bins)
 
-
   # Derivative
   N = len(y)
   D = np.zeros((N,N))
@@ -287,11 +286,11 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=512):
   LHS = gaussian_filter1d(D1*f,sigma=2)
   RHS = D@(gaussian_filter1d(D2*f,sigma=2))
   
-  axs[1,0].plot(y[1:-1],LHS[1:-1],'r:', linewidth=2,label=r'$\mathbb{D}^{(1)} f$')
-  axs[1,0].plot(y[1:-1],RHS[1:-1],'b--', linewidth=2,label=r'$\partial_y \left( \mathbb{D}^{(2)} f \right)$')
+  axs[1,0].plot(y[1:-1],LHS[1:-1],'r:', linewidth=2,label=r'$\mathbb{D}^{(1)} f_Y$')
+  axs[1,0].plot(y[1:-1],RHS[1:-1],'b--', linewidth=2,label=r'$\partial_y \left( \mathbb{D}^{(2)} f_Y \right)$')
   axs[1,0].set_xlabel(r'$y$',fontsize=24)
 
-  axs[1,1].plot(y,f,'r', linewidth=2,label=r'$f(y)$')
+  axs[1,1].plot(y,f,'r', linewidth=2,label=r'$f_Y(y)$')
   axs[1,1].fill_between(x=y,y1=f,color= "r",alpha= 0.2)
   axs[1,1].set_ylim([0,1.1*max(f)])
   axs[1,1].set_xlabel(r'$y$',fontsize=24)
