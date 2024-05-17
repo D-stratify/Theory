@@ -1,5 +1,7 @@
 # PDF_Equation: Transport and mixing in control volumes through the lens of probability
 
+[![DOI](https://sandbox.zenodo.org/badge/743618678.svg)](https://sandbox.zenodo.org/doi/10.5072/zenodo.56173)
+
 This repository contains notebooks which apply the forward Kolmogorov equation derived in *Craske J. et al. 2024* to the following examples:
 
 - (1) ABC flow advection diffusion equation 
