@@ -1,4 +1,4 @@
-# PDF_Equation
+# PDF_Equation: Mixing through the lens of probability
 
 This repository contains notebooks which apply the forward Kolmogorov equation derived in *Craske J. et al. 2024* to the following examples
 
