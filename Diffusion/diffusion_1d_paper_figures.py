@@ -230,7 +230,7 @@ def Plot_space_time():
   cbar.update_ticks()
 
   plt.xlabel(r'$t$',fontsize=24)
-  plt.ylabel(r'$z$',fontsize=24)
+  plt.ylabel(r'$X_1$',fontsize=24)
   plt.tick_params(axis='both', labelsize=20)
   plt.savefig('Diffusion_1D_Space_Time.png',dpi=200)
   plt.show()
@@ -323,23 +323,23 @@ if __name__ == "__main__":
   # plot the space time diffusion process
   Plot_space_time()
 
-  # %%
-  # Generate Ensemble of data
-  try:
-    DAT = np.load('DATA.npy',allow_pickle='TRUE').item()
-    print('Loading data ... \n')
-  except:    
-    print('Generating data ... \n')
-    DAT = Generate_Ensemble()
-    np.save('DATA.npy',DAT) 
+#   # %%
+#   # Generate Ensemble of data
+#   try:
+#     DAT = np.load('DATA.npy',allow_pickle='TRUE').item()
+#     print('Loading data ... \n')
+#   except:    
+#     print('Generating data ... \n')
+#     DAT = Generate_Ensemble()
+#     np.save('DATA.npy',DAT) 
     
-  # %%
-  # plot the joint densities
-  Plot_joint_density(DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'])
+#   # %%
+#   # plot the joint densities
+#   Plot_joint_density(DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'])
 
-  # %%
-  # plot the terms and coefficients
-  Plot_Terms(DAT['Y_data'],DAT['dY2_data'], 
-             DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'],N_bins=1024)
+#   # %%
+#   # plot the terms and coefficients
+#   Plot_Terms(DAT['Y_data'],DAT['dY2_data'], 
+#              DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'],N_bins=1024)
 
-# %%
+# # %%
