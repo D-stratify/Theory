@@ -16,9 +16,9 @@ import logging
 import h5py
 logger = logging.getLogger(__name__)
 
-root = logging.root
-for h in root.handlers:
-    h.setLevel("WARNING");
+# root = logging.root
+# for h in root.handlers:
+#     h.setLevel("WARNING");
 
 import matplotlib.pyplot as plt
 plt.rcParams.update({
@@ -72,7 +72,7 @@ def Solve(N=2000,T=10,Nz=24,a=5,σ=1,W=None):
 
   # Initial condition
   # z      = dist.local_grid(zbasis)
-  # Y['g'] = z;
+  # Y['g'] = 1e-06*z;
 
   np.random.seed(42)
   T_vec,dt = np.linspace(0,T,N,retstep=True)
@@ -88,7 +88,7 @@ def Solve(N=2000,T=10,Nz=24,a=5,σ=1,W=None):
   while solver.proceed:
 
     n    = solver.iteration
-
+    
     # Specify the bcs according to OU process
     Yt_z0    = Y(z=0).evaluate()['g'][0];
     g0['g'] = OU(Y_t = Yt_z0, W_t=W[n,0],dt=dt,μ_z=0,a=a,σ=σ)
@@ -224,14 +224,14 @@ def Plot_space_time():
   plt.contourf(t_vec,z_vec,Y_vec.T,levels=50,cmap='RdBu')
   plt.contourf(t_vec,z_vec,Y_vec.T,levels=50,cmap='RdBu')
   cbar = plt.colorbar()
-  cbar.ax.tick_params(labelsize=20) 
+  cbar.ax.tick_params(labelsize=30) 
   tick_locator = ticker.MaxNLocator(nbins=3)
   cbar.locator = tick_locator
   cbar.update_ticks()
 
-  plt.xlabel(r'$t$',fontsize=24)
-  plt.ylabel(r'$z$',fontsize=24)
-  plt.tick_params(axis='both', labelsize=20)
+  plt.xlabel(r'$t$',fontsize=30)
+  plt.ylabel(r'$z$',fontsize=30)
+  plt.tick_params(axis='both', labelsize=30)
   plt.savefig('Diffusion_1D_Space_Time.png',dpi=200)
   plt.show()
 
@@ -249,9 +249,9 @@ def Plot_joint_density(Y0_Data,Y1_Data,Y0zData,Y1zData):
   fig = plt.figure(figsize=(4,5),layout='constrained')
 
   plt.hist2d(x=Y0_Data[...].flatten(), y=nz_minus*Y0zData[...].flatten(),range = ((-1.25,1.25),(-10,10)),bins = 20)
-  plt.xlabel(r'$y$',fontsize=24)
-  plt.ylabel(r'$n \cdot \nabla y$',fontsize=24)
-  plt.tick_params(axis='both', labelsize=20)
+  plt.xlabel(r'$y$',fontsize=30)
+  plt.ylabel(r'$n \cdot \nabla y$',fontsize=30)
+  plt.tick_params(axis='both', labelsize=30)
   plt.savefig('Diffusion_1D_Joint_Density.png',dpi=200)
   plt.show()
 
@@ -286,8 +286,8 @@ def Plot_Terms(Y_data,dY2_data, Y0_Data,Y1_Data,Y0zData,Y1zData,N_bins=512):
   LHS = gaussian_filter1d(D1*f,sigma=2)
   RHS = D@(gaussian_filter1d(D2*f,sigma=2))
   
-  axs[1,0].plot(y[1:-1],LHS[1:-1],'r:', linewidth=2,label=r'$\mathbb{D}^{(1)} f_Y$')
   axs[1,0].plot(y[1:-1],RHS[1:-1],'b--', linewidth=2,label=r'$\partial_y \left( \mathbb{D}^{(2)} f_Y \right)$')
+  axs[1,0].plot(y[1:-1],LHS[1:-1],'r-', linewidth=2,label=r'$\mathbb{D}^{(1)} f_Y$')
   axs[1,0].set_xlabel(r'$y$',fontsize=24)
 
   axs[1,1].plot(y,f,'r', linewidth=2,label=r'$f_Y(y)$')
@@ -325,21 +325,21 @@ if __name__ == "__main__":
 
   # %%
   # Generate Ensemble of data
-  try:
-    DAT = np.load('DATA.npy',allow_pickle='TRUE').item()
-    print('Loading data ... \n')
-  except:    
-    print('Generating data ... \n')
-    DAT = Generate_Ensemble()
-    np.save('DATA.npy',DAT) 
+  # try:
+  #   DAT = np.load('DATA.npy',allow_pickle='TRUE').item()
+  #   print('Loading data ... \n')
+  # except:    
+  #   print('Generating data ... \n')
+  #   DAT = Generate_Ensemble()
+  #   np.save('DATA.npy',DAT) 
     
-  # %%
-  # plot the joint densities
-  Plot_joint_density(DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'])
+  # # %%
+  # # plot the joint densities
+  # Plot_joint_density(DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'])
 
-  # %%
-  # plot the terms and coefficients
-  Plot_Terms(DAT['Y_data'],DAT['dY2_data'], 
-             DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'],N_bins=1024)
+  # # %%
+  # # plot the terms and coefficients
+  # Plot_Terms(DAT['Y_data'],DAT['dY2_data'], 
+  #            DAT['Y0_Data'],DAT['Y1_Data'],DAT['Y0zData'],DAT['Y1zData'],N_bins=1024)
 
 # %%
