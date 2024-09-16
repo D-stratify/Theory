@@ -9,81 +9,245 @@ This notebook applies the forward Kolmogorov equation derived in *Craske J. et a
 The advection diffusion equation is solved using a Fourier psuedo-spectral method, while the relevant terms in the forward Kolmogorov equation are estimated using histograms.
 """
 
-import numpy as np
 from scipy import sparse
-import h5py
+import numpy as np
+import h5py, copy
+import matplotlib.pyplot as plt
 
-def solve(T,Nx=32,Δt=1e-03):
+
+def wavenumbers(N):
+    """Return wavenumbers for the periodic domain."""
+    ik = 1j*np.zeros(N)
+    ik[0:N//2+1] = 1j*np.arange(0,N//2+1)
+    ik[N//2+1:]  = 1j*np.arange(-N//2+1,0,1)
+    return ik
+
+def domain(N,test=False):
+    """Generate a grid for x."""
+    if test == True:
+        h = 2*np.pi/N
+        x = h*np.arange(1,N+1,1)
+    else:
+        x, h = np.linspace(-np.pi,np.pi,N,retstep=True)
+    return x,h
+
+def derivative(f,axis=0,deriv=1):
+    """Compute any 1st or 2nd derivative of a 1,2 or 3D field."""
+
+    # Determine the dimension (dim) and size (N).
+    dim = len(f.shape)
+    N   = f.shape[0]
+
+    # Create the 1st and 2nd derivative operators
+    ik = wavenumbers(N)
+    if deriv == 1:
+        ik[N//2] = 0
+        D = sparse.diags([ik],[0])   
+    elif deriv == 2:
+        D = sparse.diags([ik**2],[0])
+    else:
+        return f
+      
+    I = sparse.eye(N)
+    F = f.flatten()
+
+    # Compute the derivative
+    if dim == 1:
+        return D@F
     
+    elif dim == 2:
+
+        if axis == 0:
+            Di = sparse.kron(D,I)
+        elif axis == 1:    
+            Di = sparse.kron(I,D)
+        
+        df = Di@F 
+        return df.reshape((N,N))
+    
+    elif dim == 3:
+
+        if axis == 0:
+            Di = sparse.kron(sparse.kron(D,I),I)
+        elif axis == 1:    
+            Di = sparse.kron(sparse.kron(I,D),I)
+        elif axis == 2:    
+            Di = sparse.kron(sparse.kron(I,I),D)
+
+        df = Di@F 
+        return df.reshape((N,N,N))
+    
+    return None
+
+def tests(N=32):
+    """Test the derivative function on analytic functions."""
+    
+    x, h = domain(N,test=True)
+    y = copy.deepcopy(x)
+    z = copy.deepcopy(x)
+
+    f_x = np.cos(x)
+    df_x = -np.sin(x)
+    ddf_x = -np.cos(x)
+
+    f_y = np.sin(3*y)
+    df_y = 3*np.cos(3*y)
+    ddf_y = -9*np.sin(3*y)
+
+    f_z = np.sin(4*z)
+    df_z = 4*np.cos(4*z)
+    ddf_z = -16*np.sin(4*z)
+    
+    def test_derivative_1D():
+
+        f_hat = np.fft.fft(f_x)
+        
+        df_x_hat = derivative(f_hat,axis=0,deriv=1)
+        df_x_num = np.fft.ifft(df_x_hat).real
+        error_x = np.sum((df_x - df_x_num)**2) * h
+        print('Error 1D 1st =',error_x)
+
+        ddf_x_hat = derivative(f_hat,axis=0,deriv=2)
+        ddf_x_num = np.fft.ifft(ddf_x_hat).real
+        error_xx = np.sum((ddf_x - ddf_x_num)**2) * h
+        print('Error 1D 2nd =',error_xx)
+
+        assert (error_x < 1e-15) and (error_xx < 1e-15)
+
+    def test_derivative_2D():
+
+        F = np.outer(f_x,f_y)
+        
+        F_x = np.outer(df_x,f_y)
+        F_y = np.outer(f_x,df_y)
+        F_xx = np.outer(ddf_x,f_y)
+        F_yy = np.outer(f_x,ddf_y)
+
+        F_hat = np.fft.fftn(F)
+        
+        # check 1st derivatives
+        for i,F_i in enumerate([F_x,F_y]):
+            F_i_hat = derivative(F_hat,axis=i,deriv=1)
+            F_i_num = np.fft.ifftn(F_i_hat).real
+            error = np.sum((F_i - F_i_num)**2) * h**2
+            print('Error 2D 1st in axis %d = %e'%(i,error))
+            assert error < 1e-15
+
+        # check 2nd derivatives
+        for i,F_ii in enumerate([F_xx,F_yy]):
+            F_ii_hat = derivative(F_hat,axis=i,deriv=2)
+            F_ii_num = np.fft.ifftn(F_ii_hat).real
+            error = np.sum((F_ii - F_ii_num)**2) * h**2
+            print('Error 2D 2nd in axis %d = %e'%(i,error))
+            assert error < 1e-15
+
+    def test_derivative_3D():
+
+        F = np.kron(np.kron(f_x,f_y),f_z).reshape((N,N,N))
+        
+        F_x =  np.kron(np.kron(df_x,f_y),f_z).reshape((N,N,N))
+        F_y =  np.kron(np.kron(f_x,df_y),f_z).reshape((N,N,N))
+        F_z =  np.kron(np.kron(f_x,f_y),df_z).reshape((N,N,N))
+        F_xx =  np.kron(np.kron(ddf_x,f_y),f_z).reshape((N,N,N))
+        F_yy =  np.kron(np.kron(f_x,ddf_y),f_z).reshape((N,N,N))
+        F_zz =  np.kron(np.kron(f_x,f_y),ddf_z).reshape((N,N,N))
+
+        F_hat = np.fft.fftn(F)
+        
+        # check 1st derivatives
+        for i,F_i in enumerate([F_x,F_y,F_z]):
+            F_i_hat = derivative(F_hat,axis=i,deriv=1)
+            F_i_num = np.fft.ifftn(F_i_hat).real
+            error = np.sum((F_i - F_i_num)**2) * h**3
+            print('Error 3D 1st in axis %d = %e'%(i,error))
+            assert error < 1e-15
+
+        # check 2nd derivatives
+        for i,F_ii in enumerate([F_xx,F_yy,F_zz]):
+            F_ii_hat = derivative(F_hat,axis=i,deriv=2)
+            F_ii_num = np.fft.ifftn(F_ii_hat).real
+            error = np.sum((F_ii - F_ii_num)**2) * h**3
+            print('Error 3D 2nd in axis %d = %e'%(i,error))
+            assert error < 1e-15
+
+    test_derivative_1D()
+    print("\n")
+    test_derivative_2D()
+    print("\n")
+    test_derivative_3D()
+
+    return None
+
+def solve(T,Nx=64,Δt=5e-03, A=1,B=1,C=1):
+    """Solve the advection diffusion equation with an ABC flow."""
+
     # Parameters
-    A,B,C = 1,1,1
+    𝛼 = 1/10 # Equivalent to the Peclet number
 
     # Domain
-    x, Δx = np.linspace(-np.pi,np.pi,Nx,retstep=True)
-    t = np.arange(0,T,Δt); Nt = len(t)
+    x, h = domain(Nx)
+    t = np.arange(0,T,Δt)
+    Nt = len(t)
     
     # Derivatives
-    ik = 1j*np.zeros(Nx)
-    ik[0:Nx//2+1] = 1j*np.arange(0,Nx//2+1)
-    ik[Nx//2+1:]  = 1j*np.arange(-Nx//2+1,0,1)
-
-    I  = sparse.eye(Nx)
+    ik = wavenumbers(Nx)
+    II = sparse.eye(Nx)
     D2 = sparse.diags([ik**2],[0])
-    
-    ik[Nx//2] = 0.
-    D  = sparse.diags([ik   ],[0])
-    
-    D_1 = sparse.kron( sparse.kron(D,I), I)
-    D_2 = sparse.kron( sparse.kron(I,D), I)
-    D_3 = sparse.kron( sparse.kron(I,I), D)
-    
-    L = sparse.kron(sparse.kron(D2,I),I) + sparse.kron(sparse.kron(I,D2),I) + sparse.kron( sparse.kron(I,I), D2)
-   
-    II= sparse.eye(Nx**3,format="csr")
-    LHS = sparse.csr_matrix(II/Δt - L/2)
-    RHS = sparse.csr_matrix(II/Δt + L/2)
+    L = sparse.kron(sparse.kron(D2,II),II) + sparse.kron(sparse.kron(II,D2),II) + sparse.kron(sparse.kron(II,II),D2)
+    L *= 𝛼
+    III = sparse.eye(Nx**3,format="csr")
+    LHS = sparse.csr_matrix(III/Δt - L/2)
+    RHS = sparse.csr_matrix(III/Δt + L/2)
 
     # ABC flow
-    X_1,X_2,X_3,_ = np.meshgrid(x,x,x,'ij')
-    X_1,X_2,X_3 = X_1[...,0],X_2[...,0],X_3[...,0]
+    I   = np.ones(Nx) 
+    X_1 = np.kron(np.kron(x,I),I).reshape((Nx,Nx,Nx))
+    X_2 = np.kron(np.kron(I,x),I).reshape((Nx,Nx,Nx))
+    X_3 = np.kron(np.kron(I,I),x).reshape((Nx,Nx,Nx))
 
     U_1 = A*np.sin(X_3) + C*np.cos(X_2)
     U_2 = B*np.sin(X_1) + A*np.cos(X_3)
     U_3 = C*np.sin(X_2) + B*np.cos(X_1)
+    U   = [U_1,U_2,U_3]
 
+    # check divergence = 0
+    div_U = 0*U_1
+    for i,U_i in enumerate(U):
+        U_i_hat = np.fft.fftn(U_i,axes=(i,)) 
+        dU_i_hat = derivative(U_i_hat,axis=i)
+        dU_i = np.fft.ifftn(dU_i_hat,axes=(i,)).real
+        div_U += dU_i
+    assert abs( np.sum(div_U) * h**3 ) < 1e-15
+    
     # Initial conditions
-    Y_data = np.zeros((Nt,Nx,Nx,Nx))
+    Y_data   = np.zeros((Nt,Nx,Nx,Nx))
     DY2_data = np.zeros((Nt,Nx,Nx,Nx))
 
-    Y_0 = np.tanh(1*(X_1 + X_2 + X_3))
-    Y = np.fft.fftn(Y_0).flatten()
+    Y_0 = np.tanh(10*(X_1 + X_2 + X_3))
+    Y_hat = np.fft.fftn(Y_0).flatten()
     
     # Solve
     for n,t_i in enumerate(t):
 
-        # Compute ∇Y on k-space
-        DY_1 = (D_1@Y).reshape((Nx,Nx,Nx))
-        DY_2 = (D_2@Y).reshape((Nx,Nx,Nx))
-        DY_3 = (D_3@Y).reshape((Nx,Nx,Nx))
+        # Compute NL terms
+        Y_hat = Y_hat.reshape((Nx,Nx,Nx))
+        Y_data[n,...] = np.fft.ifftn(Y_hat).real
+        
+        u_grad_Y = np.zeros((Nx,Nx,Nx))
+        for i,U_i in enumerate(U):
+            DY_hat_i  = derivative(Y_hat,axis=i,deriv=1)
+            DY_i      = np.fft.ifftn(DY_hat_i).real
+            u_grad_Y += U_i*DY_i
+            DY2_data[n,...] += 𝛼*DY_i**2
+        F_hat = np.fft.fftn(u_grad_Y).flatten()
+        Y_hat = Y_hat.flatten()
 
-        # Multiply U.∇Y in g-space
-        DY_1 = np.fft.ifftn(DY_1).real
-        DY_2 = np.fft.ifftn(DY_2).real
-        DY_3 = np.fft.ifftn(DY_3).real
+        # Update
+        Y_hat = sparse.linalg.spsolve(LHS,RHS.dot(Y_hat) - F_hat)
 
-        u_grad_Y = U_1*DY_1 + U_2*DY_2 + U_3*DY_3
-
-        Y_data[n,...]   = np.fft.ifftn( Y.reshape((Nx,Nx,Nx)) ).real
-        DY2_data[n,...] = DY_1**2 + DY_2**2 + DY_3**2
-
-        # FFTn U.∇Y into k-space
-        F = np.fft.fftn( u_grad_Y ).flatten()
-
-        # Interior according to heat diffusion
-        Y = sparse.linalg.spsolve(LHS,RHS.dot(Y) - F )
-
+        # Check <Y> = 0 maintained
         if n%100 == 0:
-            print('mean = ',np.mean(Y_data[n,...]))
+            assert np.abs(Y_data[n,...].mean()) < 1e-15
 
     # Save data
     f = h5py.File('snapshots.h5', mode='w')
@@ -183,9 +347,12 @@ if __name__ == "__main__":
     %matplotlib inline
 
     # %%
-    for t in [0.05,0.5,1.0]:
+    tests()
+
+    # %%
+    for t in [0.5,1,2,4]:
         print('time t=%3.3f \n'%t)
-        solve(T=t,Nx=24,Δt=1e-04)
+        solve(T=t,Nx=64,Δt=5e-03)
         x_data,y_data,Y_data,y,f,E = Data(N_bins=128)
         Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time=t)
     
