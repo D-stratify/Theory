@@ -14,11 +14,11 @@ import logging
 import h5py
 logger = logging.getLogger(__name__)
 
-def solve(stop_sim_time,Nx=32):
+def solve(stop_sim_time,Nx=64):
     
     # Parameters
     κ = 0.1;  # Equivalent to Peclet number
-    timestep = 5e-03
+    timestep = 2.5e-03
 
     # Domain
     coords = d3.CartesianCoordinates('X_1','X_2','X_3')
@@ -120,11 +120,11 @@ def Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time):
         'text.latex.preamble': r'\usepackage{amsfonts}'
     })
 
-    fig, axs = plt.subplots(2,1,figsize=(4,8),layout='constrained')
+    fig, axs = plt.subplots(2,1,figsize=(4.5,8),layout='constrained')
 
     axs[0].pcolormesh(x_data,y_data,Y_data[-1,:,:,0],cmap='RdBu',norm='linear')
-    axs[0].set_ylabel(r'$X_2$',fontsize=24)
-    axs[0].set_xlabel(r'$X_1$',fontsize=24)
+    axs[0].set_ylabel(r'$X^2$',fontsize=24)
+    axs[0].set_xlabel(r'$X^1$',fontsize=24)
     axs[0].set_xticks([-2,0,2])
     axs[0].set_yticks([-2,0,2])
 
@@ -149,6 +149,6 @@ def Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time):
 if __name__ == "__main__":
     
     for t in [0.5,1.0,2.0,4.0]:
-        solve(stop_sim_time=t,Nx=48)
+        solve(stop_sim_time=t,Nx=64)
         x_data,y_data,Y_data,y,f,E = Data(N_bins=128)
         Plot(x_data,y_data,Y_data,y,f,E,stop_sim_time=t)

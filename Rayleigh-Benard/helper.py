@@ -1,15 +1,18 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
+
 def interp(Y, X, X_new, axis=1):
   """Interpolate the Chebyshev points onto a uniform grid."""
   Y_new = interp1d(X, Y, axis=axis, fill_value="extrapolate")
   return Y_new(X_new)
 
+
 def time_average(Y, t, t0=0):
     """Time average for t>t0."""
     dom = t > t0
-    return np.trapz(Y[dom,:,:], x=t[dom], axis=0)[0]/(t[-1]-t0)
+    return np.trapezoid(Y[dom,:,:], x=t[dom], axis=0)[0]/(t[-1]-t0)
+
 
 class build_pdf:
     def __init__(self, Y1, Y2, bins=(150, 150), range_=None, f_X=None, df_X=None, dx=None):
@@ -139,5 +142,3 @@ class build_pdf:
         Computes the expectation of g
         """
         return np.sum(np.sum(self.f_Y*g, axis=0), axis=0) * np.prod(self.dy)
-
-    
