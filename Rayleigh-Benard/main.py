@@ -14,7 +14,7 @@ To run and plot using e.g. 4 processes:
 
     $ mpiexec -n 4 python3 rayleigh_benard.py
 
-for the parameters in the script it will take about ~200 cpu-hr to run.
+for the parameters in the script it will take about ~150 cpu-hr to run.
 """
 
 # Prevent multi-threading upon initialising mpi4py
@@ -140,27 +140,13 @@ def solve():
     timeseries.add_task(d3.Integrate(grad_b@ez, ('x',))/Lx,  layout='g', name='<db_dz>(z)', scales=2)
     timeseries.add_task(d3.Integrate(d3.grad(grad_b@ez)@ez, ('x',))/Lx,  layout='g', name='<ddb_dz2>(z)', scales=2)
 
-    # Boundary profiles
-    slices = solver.evaluator.add_file_handler('slices', sim_dt=0.2)
-
-    slices.add_task( grad_b(z=0)@ez,  layout='g', name='db_dz(z=0)')
-    slices.add_task( b(z=0),  layout='g', name='b(z=0)')
-    slices.add_task( grad_b(z=1)@ez,  layout='g', name='db_dz(z=1)')
-    slices.add_task( b(z=1),  layout='g', name='b(z=1)')
-
-
     # Snapshots
     fields = solver.evaluator.add_file_handler('fields', sim_dt=2)
 
-    fields.add_task( grad_b(z=0)@ez,  layout='g', name='db_dz(z=0)')
-    fields.add_task( b(z=0),  layout='g', name='b(z=0)')
-    fields.add_task( grad_b(z=1)@ez,  layout='g', name='db_dz(z=1)')
-    fields.add_task( b(z=1),  layout='g', name='b(z=1)')
-
-    fields.add_task(b,    name='b',scales=dealias)
-    fields.add_task(u,    name='u',scales=dealias)
-    fields.add_task(grad_b       , name='grad_b',scales=dealias)
-    fields.add_task(d3.grad(u),    name='grad_u',scales=dealias)
+    fields.add_task(b,    name='B',scales=dealias)
+    fields.add_task(u@ez, name='W',scales=dealias)
+    fields.add_task(grad_b@ez       , name='dBdz',scales=dealias)
+    fields.add_task(d3.grad(u@ez)@ez, name='dWdz',scales=dealias)
 
     # CFL
     CFL = d3.CFL(solver, initial_dt=max_timestep, cadence=10, safety=0.2, threshold=0.05, max_change=1.5, min_change=0.5, max_dt=max_timestep)
