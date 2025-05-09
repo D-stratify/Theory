@@ -141,7 +141,7 @@ def solve():
     timeseries.add_task(d3.Integrate(d3.grad(grad_b@ez)@ez, ('x',))/Lx,  layout='g', name='<ddb_dz2>(z)', scales=2)
 
     # Snapshots
-    fields = solver.evaluator.add_file_handler('fields', sim_dt=2)
+    fields = solver.evaluator.add_file_handler('fields', sim_dt=4*2)
 
     fields.add_task(b,    name='B',scales=dealias)
     fields.add_task(u@ez, name='W',scales=dealias)
