@@ -490,8 +490,8 @@ labs = [r'$(a)$',r'$(b)$',r'$(c)$']
 i = 0
 
 # Plot the marginal distribution for the bottom boundary layer
-ax[i].barh(Omega[i].y2, Omega[i].f_Y2(),color='darkred',alpha=0.8,height=Omega[i].dy[1])  # Plot f_B|Z(b|z_0)
-ax[i].set_xlabel(r'$f_{B|Z=z_0}$')
+ax[i].barh(Omega[i].y2, Omega[i].f_Y2(),color='darkred',alpha=0.8,height=Omega[i].dy[1])  # Plot f_B|Z(b|z_1)
+ax[i].set_xlabel(r'$f_{B|Z=z_1}$')
 ax[i].set_ylim(y2lim[i])
 ax[i].set_xlim(xlim_bot[i])
 ax[i].set_ylabel('$b$')
@@ -502,7 +502,7 @@ ax2 = ax[i].twiny()
 ax2.fill_betweenx(Omega[i].y2,-V[i] * Omega[i].f_Y2(), color=col, alpha=0.6,lw=0)
 ax2.plot(-V[i] * Omega[i].f_Y2(), Omega[i].y2, '-k', lw=0.6)
 ax2.plot(-np.gradient(D_1[i] * Omega[i].f_Y2(),Omega[i].y2), Omega[i].y2,'-',color='navy',lw=0.8)
-ax2.set_xlabel(r'$\partial_{t} f_{B|Z=z_0}$')
+ax2.set_xlabel(r'$\partial_{t} f_{B|Z=z_1}$')
 ax2.set_xlim(xlim_top[i])
 ax2.plot([0,0],y2lim[i],'-k',lw=0.6)
 ax2.plot(xlim_top[i],[y2lim[1][0]]*2,'-k',lw=0.6)
@@ -545,7 +545,7 @@ i = 2
 
 # Plot the marginal distribution for the top boundary layer
 ax[i].barh(Omega[i].y2, Omega[i].f_Y2(),color='darkred',alpha=0.8,height=Omega[i].dy[1])
-ax[i].set_xlabel(r'$f_{B|Z=z_2}$')
+ax[i].set_xlabel(r'$f_{B|Z=z_3}$')
 ax[i].set_ylim(y2lim[i])
 ax[i].set_xlim(xlim_bot[i])
 
@@ -554,7 +554,7 @@ ax2 = ax[i].twiny()
 ax2.fill_betweenx(Omega[i].y2,-V[i] * Omega[i].f_Y2(), color=col, alpha=0.6,lw=0)
 ax2.plot(-V[i] * Omega[i].f_Y2(), Omega[i].y2, '-k', lw=0.6)
 ax2.plot(-np.gradient(D_1[i] * Omega[i].f_Y2(),Omega[i].y2), Omega[i].y2,'-',color='navy',lw=0.8)
-ax2.set_xlabel(r'$\partial_{t} f_{B|Z=z_2}$')
+ax2.set_xlabel(r'$\partial_{t} f_{B|Z=z_3}$')
 ax2.set_xlim(xlim_top[i])
 ax2.plot([0,0],y2lim[i],'-k',lw=0.6)
 ax2.plot(xlim_top[i],[y2lim[1][0]]*2,'-k',lw=0.6)
